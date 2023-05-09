@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -12,6 +13,10 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
+
+    public Text HighScoreText;
+    public int highScore;
+    public static MainManager Instance;
     
     private bool m_Started = false;
     private int m_Points;
@@ -19,6 +24,43 @@ public class MainManager : MonoBehaviour
     private bool m_GameOver = false;
 
     
+    void Awake() {
+        if(Instance == null) {
+            Instance = this;
+        }
+        LoadHighScore();
+    }
+
+    [System.Serializable]
+    class Score {
+        public int score;
+    }
+
+    void LoadHighScore() {
+        string path = Application.persistentDataPath + "/highScoreUnigit.json";
+        if (File.Exists(path)) {
+            Debug.Log("Loading High Score...");
+            string json = File.ReadAllText(path);
+            Score s = JsonUtility.FromJson<Score>(json);
+            highScore = s.score;
+            HighScoreText.text = "High Score : " + highScore.ToString();
+        } else {
+            highScore = 0;
+        }
+    }
+
+    void SaveHighScore(int newHighScore) {
+        if (highScore < newHighScore) {
+            Debug.Log("Saving High Score...");
+            string path = Application.persistentDataPath + "/highScoreUnigit.json";
+            Debug.Log(path);
+            Score s = new Score();
+            s.score = newHighScore;
+            string json = JsonUtility.ToJson(s);
+            File.WriteAllText(path, json);
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -62,8 +104,7 @@ public class MainManager : MonoBehaviour
         }
     }
 
-    void AddPoint(int point)
-    {
+    void AddPoint(int point) {
         m_Points += point;
         ScoreText.text = $"Score : {m_Points}";
     }
@@ -72,5 +113,6 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        SaveHighScore(m_Points);
     }
 }
